@@ -12,11 +12,22 @@ options.add_argument('--headless')
 options.add_argument('--disable-gpu')
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+GITHUB_REPO = "https://raw.githubusercontent.com/BILILICHENG/JPJSJH-DV-AUTO/refs/heads/main/earthquake_data.txt"
 
-# GitHub raw 文件 URL
-earthquake_data_url = "https://raw.githubusercontent.com/BILILICHENG/JPJSJH-DV-AUTO/refs/heads/main/earthquake_data.txt"
-latest_earthquake_data_url = "https://raw.githubusercontent.com/BILILICHENG/JPJSJH-DV-AUTO/refs/heads/main/latest_earthquake_data.txt"
+# 获取远程文件内容
+def get_remote_file(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text.splitlines()
+        else:
+            print(f"Error fetching file from {url}, status code {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"Error: {e}")
+        return []
 
+# 更新地震数据
 def fetch_earthquake_data():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     url = "https://www.data.jma.go.jp/multi/quake/index.html?lang=jp"
@@ -45,34 +56,27 @@ def fetch_earthquake_data():
 
             formatted_data = [f"{row[0]}={row[1]}={row[2]}={row[3]}={row[4]}" for row in data]
 
-            # 通过 requests 获取文件内容
-            try:
-                saved_data = requests.get(earthquake_data_url).text.splitlines()
-            except Exception as e:
-                saved_data = []
+            # 读取远程文件内容
+            saved_data = get_remote_file(f"{GITHUB_REPO}earthquake_data.txt")
+            latest_data = get_remote_file(f"{GITHUB_REPO}latest_earthquake_data.txt")
 
-            try:
-                latest_data = requests.get(latest_earthquake_data_url).text.splitlines()
-            except Exception as e:
-                latest_data = []
-
+            # 找到新数据
             new_data = [line for line in formatted_data if line + "\n" not in saved_data]
 
             if new_data:
-                # 更新 latest_earthquake_data.txt 文件
-                with open('latest_earthquake_data.txt', 'w', encoding='utf-8') as f:
-                    f.writelines([line + "\n" for line in new_data])
-
-                # 更新 earthquake_data.txt 文件
-                with open('earthquake_data.txt', 'w', encoding='utf-8') as f:
+                # 保存到本地临时目录
+                with open('/tmp/earthquake_data.txt', 'w', encoding='utf-8') as f:
                     f.writelines([line + "\n" for line in formatted_data])
+
+                with open('/tmp/latest_earthquake_data.txt', 'w', encoding='utf-8') as f:
+                    f.writelines([line + "\n" for line in new_data])
 
                 message = ""
                 for line in new_data:
                     parts = line.strip().split('=')
                     formatted_message = f"震央地名：{parts[1]}\nマグニチュード：{parts[2]}\n最大震度：{parts[3]}\n地震検知日時：{parts[0]}\n気象庁発表日時：{parts[4]}"
                     message += formatted_message + "\n------------\n"
-                
+
                 print("发送的消息内容：", message)
 
                 payload = {
@@ -83,7 +87,6 @@ def fetch_earthquake_data():
                 if response.status_code == 204:
                     print("已成功发送 Discord！")
                 else:
-                    # 打印 Discord 返回的错误信息
                     print(f"发送 Discord 时发生错误：{response.status_code}")
                     print("错误信息：", response.text)
             else:
