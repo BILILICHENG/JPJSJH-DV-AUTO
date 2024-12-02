@@ -12,22 +12,25 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        persist-credentials: false  # 禁用默认凭据
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8  # 使用 Python 3.8
+        python-version: 3.8
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install selenium requests pandas webdriver-manager tabulate
 
-    # 确保 TXT 文件同步到运行环境
+    # 确保 TXT 文件存在
     - name: Ensure TXT files exist
       run: |
-        touch earthquake_data.txt
-        touch latest_earthquake_data.txt
+        if [ ! -f "earthquake_data.txt" ]; then echo "" > earthquake_data.txt; fi
+        if [ ! -f "latest_earthquake_data.txt" ]; then echo "" > latest_earthquake_data.txt; fi
 
     # 运行地震情报脚本
     - name: Run earthquake scraper
@@ -36,12 +39,15 @@ jobs:
       env:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
-    # 将更新后的 TXT 文件推送回仓库
-    - name: Commit and push updated TXT files
+    # 配置推送权限
+    - name: Configure Git
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    # 提交并推送更新的 TXT 文件
+    - name: Commit and push updated TXT files
+      run: |
         git add earthquake_data.txt latest_earthquake_data.txt
         git commit -m "Update earthquake data files"
-        git push
-      continue-on-error: true
+        git push "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:${{ github.ref_name }}
