@@ -8,47 +8,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 检出仓库代码
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        persist-credentials: true
-        fetch-depth: 0
+        fetch-depth: 0  # 拉取完整历史
 
-    # 设置 Python 环境
+    - name: Ensure TXT files are up-to-date
+      run: |
+        git fetch --all
+        git reset --hard origin/${{ github.ref_name }}
+
+    - name: Debug TXT files
+      run: |
+        echo "earthquake_data.txt 内容："
+        cat earthquake_data.txt || echo "文件不存在或为空"
+        echo "latest_earthquake_data.txt 内容："
+        cat latest_earthquake_data.txt || echo "文件不存在或为空"
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: 3.8
 
-    # 安装所需依赖
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install selenium requests pandas webdriver-manager tabulate
 
-    # 确保 TXT 文件存在
-    - name: Ensure TXT files exist
-      run: |
-        if [ ! -f "earthquake_data.txt" ]; then echo "初始化 earthquake_data.txt" > earthquake_data.txt; fi
-        if [ ! -f "latest_earthquake_data.txt" ]; then echo "初始化 latest_earthquake_data.txt" > latest_earthquake_data.txt; fi
-
-    # 运行地震情报脚本
     - name: Run earthquake scraper
       run: |
         python 123456.py
       env:
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
-    # 配置 Git 推送权限
-    - name: Configure Git
+    - name: Commit and push updated TXT files
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-
-    # 提交并推送更新的 TXT 文件
-    - name: Commit and push updated TXT files
-      run: |
         git add earthquake_data.txt latest_earthquake_data.txt
         git commit -m "Update earthquake data files"
         git push "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:${{ github.ref_name }}
