@@ -1,17 +1,14 @@
-import requests
 import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
+import requests
 import pandas as pd
 import os
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 
-# GitHub 上的原始文件链接
-GITHUB_REPO = "https://raw.githubusercontent.com/BILILICHENG/JPJSJH-DV-AUTO/refs/heads/main/earthquake_data.txt"
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
-
-# 获取远程文件内容
+# 获取 GitHub 上的原始文件内容
 def get_remote_file(url):
     try:
         response = requests.get(url)
@@ -24,9 +21,15 @@ def get_remote_file(url):
         print(f"Error: {e}")
         return []
 
-# 更新地震数据
+# 获取地震数据并处理
 def fetch_earthquake_data():
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    options = Options()
+    options.add_argument("--headless")  # 无头模式
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    
     url = "https://www.data.jma.go.jp/multi/quake/index.html?lang=jp"
     driver.get(url)
 
@@ -54,8 +57,8 @@ def fetch_earthquake_data():
             formatted_data = [f"{row[0]}={row[1]}={row[2]}={row[3]}={row[4]}" for row in data]
 
             # 通过 URL 获取已存储的地震数据
-            saved_data = get_remote_file(f"{GITHUB_REPO}earthquake_data.txt")
-            latest_data = get_remote_file(f"{GITHUB_REPO}latest_earthquake_data.txt")
+            saved_data = get_remote_file("https://raw.githubusercontent.com/BILILICHENG/JPJSJH-DV-AUTO/refs/heads/main/earthquake_data.txt")
+            latest_data = get_remote_file("https://raw.githubusercontent.com/BILILICHENG/JPJSJH-DV-AUTO/refs/heads/main/latest_earthquake_data.txt")
 
             # 找到新数据
             new_data = [line for line in formatted_data if line + "\n" not in saved_data]
@@ -73,7 +76,7 @@ def fetch_earthquake_data():
                 payload = {
                     "content": message
                 }
-                response = requests.post(DISCORD_WEBHOOK_URL, json=payload)
+                response = requests.post(os.getenv("DISCORD_WEBHOOK_URL"), json=payload)
 
                 if response.status_code == 204:
                     print("已成功发送 Discord！")
@@ -100,4 +103,5 @@ def fetch_earthquake_data():
     finally:
         driver.quit()
 
+# 调用函数
 fetch_earthquake_data()
