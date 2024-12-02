@@ -6,7 +6,6 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import pandas as pd
-from tabulate import tabulate
 
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
@@ -69,6 +68,9 @@ def fetch_earthquake_data():
                     formatted_message = f"震央地名：{parts[1]}\nマグニチュード：{parts[2]}\n最大震度：{parts[3]}\n地震検知日時：{parts[0]}\n気象庁発表日時：{parts[4]}"
                     message += formatted_message + "\n------------\n"
                 
+                
+                print("发送的消息内容：", message)
+
                 payload = {
                     "content": message
                 }
@@ -77,7 +79,9 @@ def fetch_earthquake_data():
                 if response.status_code == 204:
                     print("已成功发送 Discord！")
                 else:
+                    # 打印 Discord 返回的错误信息
                     print(f"发送 Discord 时发生错误：{response.status_code}")
+                    print("错误信息：", response.text)
             else:
                 print("没有新的数据。")
 
