@@ -11,10 +11,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        fetch-depth: 0  # 拉取完整历史
+        fetch-depth: 0  # 拉取完整历史，确保能够访问所有的文件和分支
 
     - name: Ensure TXT files are up-to-date
       run: |
+        # 拉取最新的仓库内容
         git fetch --all
         git reset --hard origin/${{ github.ref_name }}
 
@@ -43,8 +44,13 @@ jobs:
 
     - name: Commit and push updated TXT files
       run: |
+        # 配置 Git 用户信息
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # 添加更新后的文件并提交
         git add earthquake_data.txt latest_earthquake_data.txt
         git commit -m "Update earthquake data files"
+        
+        # 推送更新回 GitHub 仓库
         git push "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:${{ github.ref_name }}
