@@ -1,9 +1,9 @@
 name: update123456
 
 on:
-  workflow_dispatch:  # 手动触发
+  workflow_dispatch:  
   schedule:
-    - cron: "*/5 * * * *"  # 每5分钟执行一次
+    - cron: "*/5 * * * *"  
 
 jobs:
   run_scraper:
@@ -13,7 +13,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
-        fetch-depth: 0  # 拉取完整历史
+        fetch-depth: 0  
 
     - name: Ensure TXT files are up-to-date
       run: |
@@ -48,8 +48,8 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         
-        # 检查是否有更改
+        
         git diff --exit-code || (git add earthquake_data.txt latest_earthquake_data.txt && git commit -m "Update earthquake data files")
 
-        # 推送更改
+        
         git push "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:${{ github.ref_name }}
