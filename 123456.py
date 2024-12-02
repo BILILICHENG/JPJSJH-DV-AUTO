@@ -1,18 +1,15 @@
 import requests
 import time
-import os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import pandas as pd
+import os
 
-options = webdriver.ChromeOptions()
-options.add_argument('--headless')
-options.add_argument('--disable-gpu')
-
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+# GitHub 上的原始文件链接
 GITHUB_REPO = "https://raw.githubusercontent.com/BILILICHENG/JPJSJH-DV-AUTO/refs/heads/main/earthquake_data.txt"
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
 # 获取远程文件内容
 def get_remote_file(url):
@@ -29,7 +26,7 @@ def get_remote_file(url):
 
 # 更新地震数据
 def fetch_earthquake_data():
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
     url = "https://www.data.jma.go.jp/multi/quake/index.html?lang=jp"
     driver.get(url)
 
@@ -56,7 +53,7 @@ def fetch_earthquake_data():
 
             formatted_data = [f"{row[0]}={row[1]}={row[2]}={row[3]}={row[4]}" for row in data]
 
-            # 读取远程文件内容
+            # 通过 URL 获取已存储的地震数据
             saved_data = get_remote_file(f"{GITHUB_REPO}earthquake_data.txt")
             latest_data = get_remote_file(f"{GITHUB_REPO}latest_earthquake_data.txt")
 
@@ -64,13 +61,7 @@ def fetch_earthquake_data():
             new_data = [line for line in formatted_data if line + "\n" not in saved_data]
 
             if new_data:
-                # 保存到本地临时目录
-                with open('/tmp/earthquake_data.txt', 'w', encoding='utf-8') as f:
-                    f.writelines([line + "\n" for line in formatted_data])
-
-                with open('/tmp/latest_earthquake_data.txt', 'w', encoding='utf-8') as f:
-                    f.writelines([line + "\n" for line in new_data])
-
+                # 将新数据发送到 Discord
                 message = ""
                 for line in new_data:
                     parts = line.strip().split('=')
@@ -89,6 +80,14 @@ def fetch_earthquake_data():
                 else:
                     print(f"发送 Discord 时发生错误：{response.status_code}")
                     print("错误信息：", response.text)
+
+                # 更新 GitHub 上的文本文件
+                with open('earthquake_data.txt', 'w', encoding='utf-8') as f:
+                    f.writelines([line + "\n" for line in formatted_data])
+
+                with open('latest_earthquake_data.txt', 'w', encoding='utf-8') as f:
+                    f.writelines([line + "\n" for line in new_data])
+
             else:
                 print("没有新的数据。")
 
