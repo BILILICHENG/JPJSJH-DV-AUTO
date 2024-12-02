@@ -14,6 +14,11 @@ options.add_argument('--disable-gpu')
 
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
+#https://github.com/BILILICHENG/JPJSJH-DV-AUTO
+#---------------------------------------------
+#https://20070615.xyz/discord
+#BY - Test 3 - Saeko Bot
+
 def fetch_earthquake_data():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     url = "https://www.data.jma.go.jp/multi/quake/index.html?lang=jp"
