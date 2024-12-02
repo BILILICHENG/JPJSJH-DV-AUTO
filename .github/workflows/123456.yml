@@ -1,0 +1,30 @@
+name: Earthquake Data Scraper
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # 10分钟
+  workflow_dispatch:  # 手动
+
+jobs:
+  run_scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.8  # 使用 Python 3.8
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install selenium requests pandas webdriver-manager
+
+    - name: Run earthquake scraper
+      run: |
+        python 123456.py
+      env:
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
