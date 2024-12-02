@@ -2,6 +2,8 @@ name: update123456
 
 on:
   workflow_dispatch:  # 手动触发
+  schedule:
+    - cron: "*/5 * * * *"  # 每5分钟执行一次
 
 jobs:
   run_scraper:
