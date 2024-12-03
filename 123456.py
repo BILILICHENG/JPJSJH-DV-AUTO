@@ -7,6 +7,8 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import pandas as pd
+from datetime import datetime
+import pytz
 
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
@@ -18,6 +20,8 @@ DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 #---------------------------------------------
 #https://20070615.xyz/discord
 #BY - Test 3 - Saeko Bot
+
+JST = pytz.timezone('Asia/Tokyo')
 
 def fetch_earthquake_data():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
@@ -39,6 +43,9 @@ def fetch_earthquake_data():
                 magnitude = cols[2].text.strip()
                 max_intensity = cols[3].text.strip()
                 announcement_time = cols[4].text.strip()
+
+                earthquake_time = convert_to_japan_time(earthquake_time)
+                announcement_time = convert_to_japan_time(announcement_time)
 
                 data.append([earthquake_time, location, magnitude, max_intensity, announcement_time])
 
@@ -99,5 +106,15 @@ def fetch_earthquake_data():
     
     finally:
         driver.quit()
+
+def convert_to_japan_time(utc_time_str):
+    """ 转日（东京时间） """
+    utc_time = datetime.strptime(utc_time_str, "%Y/%m/%d %H:%M")
+    
+    utc_time = pytz.utc.localize(utc_time)
+    
+    japan_time = utc_time.astimezone(JST)
+    
+    return japan_time.strftime("%Y/%m/%d %H:%M")
 
 fetch_earthquake_data()
