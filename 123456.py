@@ -54,35 +54,28 @@ def fetch_earthquake_data():
 
             formatted_data = [f"{row[0]}={row[1]}={row[2]}={row[3]}={row[4]}" for row in data]
 
-            
             url = "https://raw.githubusercontent.com/BILILICHENG/JPJSJH-DV-AUTO/refs/heads/main/earthquake_data.txt"  
             response = requests.get(url)
             saved_data = response.text.splitlines()
 
-            
             new_data = []
             for line in formatted_data:
                 if line not in saved_data:
                     new_data.append(line)
 
-            
             if new_data:
-                
                 with open('latest_earthquake_data.txt', 'w', encoding='utf-8') as f:
                     f.writelines([line + "\n" for line in new_data])
 
-                
                 with open('earthquake_data.txt', 'w', encoding='utf-8') as f:
                     f.writelines([line + "\n" for line in formatted_data])
 
-                
                 message = ""
                 for line in new_data:
                     parts = line.strip().split('=')
                     formatted_message = f"震央地名：{parts[1]}\nマグニチュード：{parts[2]}\n最大震度：{parts[3]}\n地震検知日時：{parts[0]}\n気象庁発表日時：{parts[4]}"
                     message += formatted_message + "\n------------\n"
-                
-                
+
                 payload = {"content": message}
                 response = requests.post(DISCORD_WEBHOOK_URL, json=payload)
 
@@ -108,7 +101,6 @@ def fetch_earthquake_data():
         driver.quit()
 
 def convert_to_japan_time(utc_time_str):
-    """ 转日（东京时间） """
     utc_time = datetime.strptime(utc_time_str, "%Y/%m/%d %H:%M")
     
     utc_time = pytz.utc.localize(utc_time)
